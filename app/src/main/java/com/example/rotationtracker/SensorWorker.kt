@@ -25,25 +25,23 @@ class SensorWorker(application: Application, private val listener: ValueChangedL
     private val rotationMatrix = FloatArray(9)
     private val orientationAngles = FloatArray(9)
 
-    private var calibrationBias: Float? = null
-
-    private var start: Long? = null
+    private var startTime: Long? = null
 
     private var isCheckAllowed = false
 
     private val timeList = mutableListOf<Long>()
-    private val sensorValueList = mutableListOf<String>()
+    private val sensorValueList = mutableListOf<FloatArray>()
+
+    private val dataFormatter = DataFormatter()
 
     interface ValueChangedListener {
-        fun onValueChanged(value: String)
-        fun onSave(timeList: List<Long>, valueList: List<String>)
+        fun onValueChanged(values: FloatArray)
+        fun onSave(timeList: List<Long>, directionList: List<FloatArray>)
     }
 
     fun registerListeners() {
-        if (sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER) != null
-            && sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR) != null
-        ) {
-            rotationSens = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
+        sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR).let {
+            rotationSens = it
             sensorManager.registerListener(this, rotationSens, SensorManager.SENSOR_DELAY_FASTEST)
             sensRot = true
         }
@@ -60,10 +58,10 @@ class SensorWorker(application: Application, private val listener: ValueChangedL
             if (isCheckAllowed) {
                 isCheckAllowed = false
                 checkSensorData(event,
-                    start?.let { System.currentTimeMillis() - it }
+                    startTime?.let { System.currentTimeMillis() - it }
                         ?: run {
-                            start = System.currentTimeMillis()
-                            start
+                            startTime = System.currentTimeMillis()
+                            startTime
                         })
             }
         }
@@ -71,57 +69,39 @@ class SensorWorker(application: Application, private val listener: ValueChangedL
 
     private fun checkSensorData(event: SensorEvent, timePassed: Long?) {
         CoroutineScope(Dispatchers.Default).launch {
-            var angle = 0.0f
+            val angles = FloatArray(2)
             if (event.sensor.type == Sensor.TYPE_ROTATION_VECTOR) {
                 SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values)
-                angle = Math.toDegrees(
-                    SensorManager.getOrientation(
-                        rotationMatrix,
-                        orientationAngles
-                    )[0].toDouble()
-                ).toFloat()
+                for (i in angles.indices) {
+                    angles[i] = Math.toDegrees(
+                        SensorManager.getOrientation(
+                            rotationMatrix,
+                            orientationAngles
+                        )[i].toDouble()
+                    ).toFloat()
+                }
             }
-            addValue(formatRawAngle(angle), timePassed!!)
+            addValue(dataFormatter.formatRawAngles(angles), timePassed!!)
         }
     }
 
-    private fun formatRawAngle(angle: Float): Float {
-        return getAngleWithCalibrationBias(shiftAngle(angle))
-    }
-
-    private fun getAngleWithCalibrationBias(angle: Float): Float {
-        return calibrationBias?.let {
-            val changedAngle = angle - it
-            when {
-                changedAngle > 360 -> changedAngle - 360
-                changedAngle < 0 -> changedAngle + 360
-                else -> changedAngle
-            }
-        } ?: run { angle }
-    }
-
-    private fun shiftAngle(angle: Float): Float {
-        //converts angle from -180->0->180 to 0->180->360
-        return (angle + 360) % 360
-    }
-
-    private fun addValue(angle: Float, timePassed: Long) {
+    fun onCalibrate() {
         CoroutineScope(Dispatchers.Default).launch {
-            timeList.add(timePassed)
-            sensorValueList.add("%.2f".format(angle))
-            withContext(Dispatchers.Main){
-                listener.onValueChanged("%.2f".format(angle))
-            }
-        }
-    }
-
-    fun onCalibrateClicked() {
-        CoroutineScope(Dispatchers.Default).launch {
-            val angle = Math.toDegrees(
+            dataFormatter.xAxisCalibrationBias = Math.toDegrees(
                 SensorManager.getOrientation(rotationMatrix, orientationAngles)[0].toDouble()
             ).toFloat()
-            calibrationBias = shiftAngle(angle)
+        }
+    }
 
+    // ----------- Adding -----------------//
+
+    private fun addValue(angles: FloatArray, timePassed: Long) {
+        CoroutineScope(Dispatchers.Default).launch {
+            timeList.add(timePassed)
+            sensorValueList.add(angles)
+            withContext(Dispatchers.Main) {
+                listener.onValueChanged(angles)
+            }
         }
     }
 
@@ -141,15 +121,3 @@ class SensorWorker(application: Application, private val listener: ValueChangedL
         }
     }
 }
-
-/*private fun mapAngleToSingular(angle: Float): Float {
-        // map from -180 to 180 on -1 to 1
-        var singular = 0.0f
-        if (angle >= -180 && angle < -90)
-            singular = -((angle + 180) / 90)
-        else if (angle >= -90 && angle <= 90)
-            singular = angle / 90
-        else if (angle > 90 && angle <= 180)
-            singular = -((angle - 180) / 90)
-        return singular
-    }*/
