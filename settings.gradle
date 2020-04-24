@@ -1,0 +1,2 @@
+rootProject.name='RotationTracker'
+include ':app'
