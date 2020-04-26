@@ -25,7 +25,7 @@ class FileFormatter {
 
     fun writeToFile(context: Context, timeList: List<Long>, directionList: List<FloatArray>) {
         val string = dataListsToString(timeList, directionList)
-        val file = File(context.getExternalFilesDir(""), "Recording.csv")
+        val file = File(context.getExternalFilesDir(""), "head_direction_recording.csv")
         try {
             val fileOutPutStream = FileOutputStream(file)
             fileOutPutStream.write(string.toByteArray())

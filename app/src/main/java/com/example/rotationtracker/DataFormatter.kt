@@ -41,8 +41,8 @@ class DataFormatter {
     }
 
     private fun mapXAxis(angle: Float): Float {
-        //converts angle from -180->0->180 to 0->180->360
-        return (angle + 360) % 360
+        //converts angle from -180->0->180 to 360->180->0
+        return -((angle - 360) % 360)
     }
 
 }
