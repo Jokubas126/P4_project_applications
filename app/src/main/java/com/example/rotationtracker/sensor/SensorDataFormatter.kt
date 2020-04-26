@@ -1,6 +1,6 @@
-package com.example.rotationtracker
+package com.example.rotationtracker.sensor
 
-class DataFormatter {
+class SensorDataFormatter {
 
     var xAxisCalibrationBias: Float? = null
         set(value) {
@@ -42,7 +42,8 @@ class DataFormatter {
 
     private fun mapXAxis(angle: Float): Float {
         //converts angle from -180->0->180 to 360->180->0
-        return -((angle - 360) % 360)
+        //return -((angle - 360) % 360)
+        return (angle + 360) % 360
     }
 
 }

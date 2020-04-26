@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
+import com.example.rotationtracker.sensor.SensorWorker
 import kotlinx.android.synthetic.main.activity_main.*
 
 @SuppressLint("SetTextI18n")
@@ -35,8 +36,9 @@ class MainActivity : AppCompatActivity(), SensorWorker.ValueChangedListener {
     }
 
     private fun work() {
-        sensorWorker = SensorWorker(application, this)
-        sensorWorker?.registerListeners()
+        sensorWorker =
+            SensorWorker(application, this)
+        sensorWorker?.onStart()
     }
 
     override fun onValueChanged(values: FloatArray) {
@@ -50,6 +52,6 @@ class MainActivity : AppCompatActivity(), SensorWorker.ValueChangedListener {
 
     override fun onPause() {
         super.onPause()
-        sensorWorker?.unregisterListeners()
+        sensorWorker?.onFinish()
     }
 }
