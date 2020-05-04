@@ -2,14 +2,9 @@ package com.example.rotationtracker.sensor
 
 class SensorDataFormatter {
 
-    var xAxisCalibrationBias: Float? = null
-        set(value) {
-            field = value?.let { mapXAxis(it) }
-        }
-
     fun formatRawAngles(angles: FloatArray): FloatArray {
         // format x axis
-        angles[0] = getXAxisWithCalibrationBias(mapXAxis(angles[0]))
+        angles[0] = getXAxisWithCalibrationBias(angles[0])
 
         // format y axis with reversed angles
         angles[1] = restrictYAxis(-angles[1])
@@ -18,12 +13,14 @@ class SensorDataFormatter {
 
     // -------------- Calibration ----------------//
 
+    var xAxisCalibrationBias: Float? = null
+
     private fun getXAxisWithCalibrationBias(angle: Float): Float {
         return xAxisCalibrationBias?.let {
             val changedAngle = angle - it
             when {
-                changedAngle > 360 -> changedAngle - 360
-                changedAngle < 0 -> changedAngle + 360
+                changedAngle > 180 -> changedAngle - 360
+                changedAngle < -180 -> changedAngle + 360
                 else -> changedAngle
             }
         } ?: run { angle }
@@ -39,11 +36,4 @@ class SensorDataFormatter {
             else -> angle
         }
     }
-
-    private fun mapXAxis(angle: Float): Float {
-        //converts angle from -180->0->180 to 360->180->0
-        //return -((angle - 360) % 360)
-        return (angle + 360) % 360
-    }
-
 }

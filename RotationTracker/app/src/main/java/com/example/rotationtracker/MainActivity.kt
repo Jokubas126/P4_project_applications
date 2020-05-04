@@ -36,13 +36,12 @@ class MainActivity : AppCompatActivity(), SensorWorker.ValueChangedListener {
     }
 
     private fun work() {
-        sensorWorker =
-            SensorWorker(application, this)
+        sensorWorker = SensorWorker(application, this)
         sensorWorker?.onStart()
     }
 
     override fun onValueChanged(values: FloatArray) {
-        x_text_view.text = "%.1f".format(values[0])
+        x_text_view.text = "%.2f".format(values[0])
         y_text_view.text = "%.1f".format(values[1])
     }
 

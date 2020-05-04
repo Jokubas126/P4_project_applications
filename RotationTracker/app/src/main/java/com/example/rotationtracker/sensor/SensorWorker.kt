@@ -18,12 +18,6 @@ class SensorWorker(application: Application, private val listener: ValueChangedL
     override val coroutineContext: CoroutineContext
         get() = Dispatchers.Default
 
-    private var magnetometerReadingSet = false
-    private var accelerometerReadingSet = false
-
-    private var magnetometerReading = FloatArray(3)
-    private var accelerometerReading = FloatArray(3)
-
     //arrays of floats to store the information about the rotation sensor
     private val rotationMatrix = FloatArray(9)
     private val orientationAngles = FloatArray(9)
@@ -61,38 +55,19 @@ class SensorWorker(application: Application, private val listener: ValueChangedL
     private fun checkSensorData(event: SensorEvent, timePassed: Long?) {
         launch {
             synchronized(this){
-
-                if (event.sensor.type == Sensor.TYPE_MAGNETIC_FIELD) {
-                    System.arraycopy(event.values, 0, magnetometerReading, 0, event.values.size)
-                    magnetometerReadingSet = true
-                } else if (event.sensor.type == Sensor.TYPE_ACCELEROMETER) {
-                    System.arraycopy(event.values, 0, accelerometerReading, 0, event.values.size)
-                    accelerometerReadingSet = true
-                }
-
-                if (event.sensor.type == Sensor.TYPE_ROTATION_VECTOR)
+                if (event.sensor.type == Sensor.TYPE_ROTATION_VECTOR){
                     SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values)
-                if (magnetometerReadingSet && accelerometerReadingSet) {
-                    SensorManager.getRotationMatrix(
-                        rotationMatrix,
-                        null,
-                        accelerometerReading,
-                        magnetometerReading
-                    )
-                    SensorManager.getOrientation(rotationMatrix, orientationAngles)
+                    val angles = FloatArray(2)
+                    for (i in angles.indices) {
+                        angles[i] = Math.toDegrees(
+                            SensorManager.getOrientation(
+                                rotationMatrix,
+                                orientationAngles
+                            )[i].toDouble()
+                        ).toFloat()
+                    }
+                    addValue(dataFormatter.formatRawAngles(angles), timePassed!!)
                 }
-
-                val angles = FloatArray(2)
-                for (i in angles.indices) {
-                    angles[i] = Math.toDegrees(
-                        SensorManager.getOrientation(
-                            rotationMatrix,
-                            orientationAngles
-                        )[i].toDouble()
-                    ).toFloat()
-                }
-
-                addValue(dataFormatter.formatRawAngles(angles), timePassed!!)
             }
         }
     }
@@ -125,6 +100,8 @@ class SensorWorker(application: Application, private val listener: ValueChangedL
 
     fun onFinish() {
         registerer.unregisterListeners(this)
+        timeList.removeAt(0)
+        sensorValueList.removeAt(0)
         listener.onSave(timeList, sensorValueList)
     }
 }
