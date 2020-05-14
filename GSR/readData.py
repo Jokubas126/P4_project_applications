@@ -31,28 +31,25 @@ def twoLists(list):
 
 rawdatalist, timelist = twoLists(read())
 
+#applying a mean and median filter for each i+4, i-4 data range
+#and using it to calculate the phasic data
 def filteredList(list):
 	filteredList = []
 	kernItems = []
 	for i in range(len(list)):
 		if i > 4 and i < (len(list) - 4):
-			for j in range():
-				kernItems[j].append(list[i - 4: i + 4])
-			print(kernItems)
+			for j in range(i - 4, i + 4):
+				kernItems.append(int(list[j]))
 			medianValue = np.median(kernItems)
 			meanValue = np.mean(kernItems)
-			filteredList[i] = (medianValue - meanValue)
-		else: 
-			filteredList.append(list[i + 1])
+			#phasic data
+			filteredList.append(medianValue - meanValue)
 
 
+	print(filteredList)
 	return filteredList
 
-
-
-filteredList(rawdatalist)
-
-
+#ploting the data
 def plot(datalist, timelist):
 	plt.plot(timelist,datalist)
 	plt.xlabel('Seconds')
@@ -60,5 +57,4 @@ def plot(datalist, timelist):
 	plt.title('GSR plot')
 	plt.show()
 
-plot(testestlist, timelist)
-		
+plot(filteredList(rawdatalist), timelist[5:len(timelist)-4])
