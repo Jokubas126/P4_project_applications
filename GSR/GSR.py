@@ -99,4 +99,5 @@ def plot(datalist, timelist):
 	plt.title('GSR plot')
 	plt.show()
 
+plot(rawdatalist,timelist)
 plot(filteredList(rawdatalist), timelist[5:len(timelist)-4])
