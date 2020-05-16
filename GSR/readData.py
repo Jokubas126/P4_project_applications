@@ -56,6 +56,4 @@ def plot(datalist, timelist, other, secondother):
 	# plt.title('GSR plot')
 	# plt.show()
 
-
-
 plot(filteredList(rawdatalist), timelist[5:len(timelist)-4], rawdatalist, timelist)
